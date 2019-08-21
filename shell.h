@@ -1,6 +1,12 @@
 #include <pwd.h>
 #include <unistd.h>
 
-const char* home;
+#define STD_BUF 1024
+
+char* home;
+
 int HOME_LEN;
-char* prompt = NULL;
+
+char* prompt;
+
+char* last_command[STD_BUF];

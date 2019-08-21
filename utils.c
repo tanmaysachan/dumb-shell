@@ -1,7 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <utils.h>
 #include <shell.h>
+#include <shell_functions.h>
+#include <function_lookup.h>
 
 char*
 get_prompt(char* pwd)
@@ -11,7 +11,6 @@ get_prompt(char* pwd)
     
     prompt = (char *)malloc(1024*sizeof(char));
 
-    // get user name
     int uid = getuid();
     struct passwd *user = getpwuid(uid);
     char *username = user->pw_name;
@@ -40,11 +39,44 @@ get_prompt(char* pwd)
     return prompt;
 }
 
-int main()
+void
+reset_last_command()
 {
-    char pwd[100];
-    home = (char *)malloc(1024*sizeof(char));
-    home = "here";
-    HOME_LEN = 4;
-    printf("%s\n", get_prompt(getcwd(pwd, sizeof(pwd))));
+    for (int i = 0; i < STD_BUF; ++i) {
+        last_command[i] = NULL;
+    }
+}
+
+void
+tokenize_command(char* cmd)
+{
+    reset_last_command();
+    int cur = 0;
+    last_command[cur] = strtok(cmd, " \r\t\n");
+    while (last_command[cur]) {
+        last_command[++cur] = strtok(NULL, " \r\t\n");
+    }
+}
+
+void
+get_input()
+{
+    char input[STD_BUF];
+    fgets(input, STD_BUF, stdin);
+    tokenize_command(input);
+}
+
+int
+command_valid()
+{
+    return 1;
+}
+
+int
+call_function()
+{
+    if (!command_valid()) {
+        return 1;
+    }
+    return call_function_();
 }
