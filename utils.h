@@ -4,12 +4,18 @@
 
 char* get_prompt(char* pwd);
 
-void reset_last_command();
+void add_to_history();
+
+void reset(char* arr[]);
 
 void tokenize_command(char* cmd);
 
-void get_input();
+int check_is_bg(char* str);
+
+int get_input();
 
 int command_valid();
 
 int call_function();
+
+int call_function_bg();

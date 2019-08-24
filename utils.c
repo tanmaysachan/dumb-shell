@@ -1,5 +1,5 @@
-#include <utils.h>
 #include <shell.h>
+#include <utils.h>
 #include <shell_functions.h>
 #include <function_lookup.h>
 
@@ -23,7 +23,7 @@ get_prompt(char* pwd)
     memset(buf, 0, sizeof(buf));
     
     if (strcmp(pwd, home) == 0){
-            strcat(prompt, "~");
+        strcat(prompt, "~");
     } else {
         if (!strncmp(home, pwd, strlen(home))) {
             char* tmp = pwd + HOME_LEN;
@@ -40,43 +40,95 @@ get_prompt(char* pwd)
 }
 
 void
-reset_last_command()
+add_to_history()
+{
+    if (history[19]) {
+        free(history[19]);
+    }
+
+    for (int i = 19; i >= 1; --i) {
+        history[i] = history[i-1];
+    }
+
+    history[0] = (char *)malloc(STD_BUF * sizeof(char));
+    strcpy(history[0], last_input);
+
+    char* hist_file_loc = (char *)malloc(STD_BUF*sizeof(char));
+    sprintf(hist_file_loc, "%s/.history", home);
+
+    FILE* hist_file = fopen(hist_file_loc, "w");
+    for (int i = 0; history[i] && i < 20; ++i) {
+        fputs(history[i], hist_file);
+        fflush(hist_file);
+    }
+}
+
+void
+reset(char* arr[])
 {
     for (int i = 0; i < STD_BUF; ++i) {
-        last_command[i] = NULL;
+        arr[i] = NULL;
     }
 }
 
 void
 tokenize_command(char* cmd)
 {
-    reset_last_command();
+    reset(last_command);
     int cur = 0;
     last_command[cur] = strtok(cmd, " \r\t\n");
     while (last_command[cur]) {
         last_command[++cur] = strtok(NULL, " \r\t\n");
     }
+    last_command_end = --cur;
 }
 
-void
+int
+check_is_bg(char* str)
+{
+    if (str[strlen(str)-1] == '&') {
+        str[strlen(str)-1] = '\0';
+        return 1;
+    } else if (!strcmp(last_command[last_command_end], "&")) {
+        last_command[last_command_end--] = NULL;
+        return 1;
+    }
+    return 0;
+}
+
+int
 get_input()
 {
     char input[STD_BUF];
     fgets(input, STD_BUF, stdin);
-    tokenize_command(input);
-}
+    strcpy(last_input, input);
 
-int
-command_valid()
-{
-    return 1;
+    if (!strcmp(input, "\n")) {
+        return 1;
+    }
+    int cur = 0;
+    reset(one_shot);
+    one_shot[cur] = strtok(input, ";");
+    while (one_shot[cur]) {
+        one_shot[++cur] = strtok(NULL, ";");
+    }
+    return 0;
 }
 
 int
 call_function()
 {
-    if (!command_valid()) {
-        return 1;
-    }
     return call_function_();
+}
+
+int call_function_bg()
+{
+    int pid = fork();
+    if (pid == 0) {
+        IS_SUBP = 1;
+        return call_function();
+    } else {
+        printf("[+1] pid: %d\n", pid);
+        return 0;
+    }
 }
