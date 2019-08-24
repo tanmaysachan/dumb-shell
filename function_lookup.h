@@ -18,6 +18,9 @@ call_function_()
     if (!strcmp(last_command[0], "pinfo")) {
         return func_pinfo();
     }
+    if (!strcmp(last_command[0], "nightswatch")) {
+        return func_nightswatch();
+    }
     if (!strcmp(last_command[0], "history")) {
         return func_history();
     }

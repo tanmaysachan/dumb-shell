@@ -11,7 +11,6 @@ initialise()
     IS_SUBPEXEC = 0;
     char hist_file_loc[STD_BUF];
     sprintf(hist_file_loc, "%s/.history", home);
-
     cwd = (char *)malloc(STD_BUF * sizeof(char));
     strcpy(cwd, home);
 
@@ -56,6 +55,8 @@ run_shell()
 	int cur = 0;
 
 	while (one_shot[cur]) {
+	    getcwd(pwd, sizeof(pwd));
+	    strcpy(cwd, pwd);
 	    tokenize_command(one_shot[cur++]);
 	    int ret_val;
 	    if (check_is_bg(last_command[last_command_end])) {
@@ -69,8 +70,9 @@ run_shell()
 	}
 
 	if (IS_SUBP) {
-	    printf("[-1] pid: %d\n", getpid());
+	    printf("\r[-1] command: %s, pid: %d                \n", last_command[0], getpid());
 	    fflush(stdin);
+            fputc('\n', stdout);
 	    exit(0);
 	} else if (IS_SUBPEXEC) {
 	    fflush(stdin);
