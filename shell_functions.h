@@ -1,28 +1,32 @@
 #include <utils.h>
 #include <shell.h>
+#include <grp.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/wait.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 int
 func_cd()
 {
     int old_errno = errno;
     if (last_command[2] != NULL) {
-        return -69;
+	return -69;
     }
     if (last_command[1] == NULL || !strcmp(last_command[1], "~")) {
-        chdir(home);
+	chdir(home);
     } else if (last_command[1][0] == '~') {
-        chdir(home);
-        if (strlen(last_command[1]) > 2) {
-            last_command[1] += 2;
-            chdir(last_command[1]);
-        }
+	chdir(home);
+	if (strlen(last_command[1]) > 2) {
+	    last_command[1] += 2;
+	    chdir(last_command[1]);
+	}
     } else {
-        chdir(last_command[1]);
+	chdir(last_command[1]);
     }
     if (errno != old_errno) {
-        return errno;
+	return errno;
     }
     return 0;
 }
@@ -34,7 +38,7 @@ func_pwd()
     int old_errno = errno;
     getcwd(tmp, sizeof(tmp));
     if (errno != old_errno) {
-        return errno;
+	return errno;
     }
     printf("%s\n", tmp);
     return 0;
@@ -43,6 +47,109 @@ func_pwd()
 int
 func_ls()
 {
+    DIR* top;
+    struct dirent* dir_ptr;
+    int old_errno;
+    if (last_command[1] == NULL || last_command[1][0] != '-') {
+	old_errno = errno;
+	if (last_command[1] == NULL) {
+	    top = opendir(cwd);
+	} else {
+	    top = opendir(last_command[1]);
+	}
+
+	if (errno != old_errno) {
+	    return errno;
+	}
+
+	old_errno = errno;
+	dir_ptr = readdir(top);
+	while(dir_ptr){
+
+	    if(dir_ptr->d_name[0] != '.' && strcmp(dir_ptr->d_name, "..")) {
+		printf("%s\n",dir_ptr->d_name);
+	    }
+	    dir_ptr = readdir(top);
+	}
+
+	if (errno != old_errno) {
+	    return errno;
+	}
+
+    } else if (last_command[1] && last_command[1][0] == '-') {
+	int show_all = 0;
+	int show_long = 0;
+
+	for (int i = 0; i < strlen(last_command[1]); ++i) {
+	    if (last_command[1][i] == 'a') show_all = 1;
+	    if (last_command[1][i] == 'l') show_long = 1;
+	}
+
+	for (int i = 1; last_command[i]; ++i) {
+	    if (!strcmp(last_command[i], "-a")) show_all = 1;
+	    if (!strcmp(last_command[i], "-l")) show_long = 1;
+	}
+
+	old_errno = errno;
+	if (last_command[last_command_end][0] != '-') {
+	    top = opendir(last_command[last_command_end]);
+	} else {
+	    top = opendir(cwd);
+	}
+
+	if (errno != old_errno) {
+	    return old_errno;
+	}
+
+	old_errno = errno;
+	dir_ptr = readdir(top);
+
+	if (errno != old_errno) {
+	    return old_errno;
+	}
+	
+	old_errno = errno;
+	while (dir_ptr) {
+	    struct stat dir_status;
+	    if (show_all || (!show_all && dir_ptr->d_name[0] != '.' && strcmp(dir_ptr->d_name, ".."))) {
+		if (show_long) {
+
+		    stat(dir_ptr->d_name, &dir_status);
+
+		    printf((S_ISDIR(dir_status.st_mode)) ? "d" : "-");
+		    printf((dir_status.st_mode & S_IRUSR) ? "r" : "-");
+		    printf((dir_status.st_mode & S_IWUSR) ? "w" : "-");
+		    printf((dir_status.st_mode & S_IXUSR) ? "x" : "-");
+		    printf((dir_status.st_mode & S_IRGRP) ? "r" : "-");
+		    printf((dir_status.st_mode & S_IWGRP) ? "w" : "-");
+		    printf((dir_status.st_mode & S_IXGRP) ? "x" : "-");
+		    printf((dir_status.st_mode & S_IROTH) ? "r" : "-");
+		    printf((dir_status.st_mode & S_IWOTH) ? "w" : "-");
+		    printf((dir_status.st_mode & S_IXOTH) ? "x" : "-");
+		    printf(" %lu", dir_status.st_nlink);
+
+		    struct passwd* psswd = getpwuid(dir_status.st_uid);
+		    struct group* grp = getgrgid(dir_status.st_gid);
+		    char* date;
+
+		    date = (char *)malloc(STD_BUF * sizeof(char));
+
+		    strftime(date, 20, "%b  %d  %I:%M", gmtime(&(dir_status.st_ctime)));
+
+		    printf(" %s  %s  %ld  %s  %s\n", psswd->pw_name, grp->gr_name,
+			   dir_status.st_size, date, dir_ptr->d_name);
+		} else {
+		    printf("%s\n",dir_ptr->d_name);
+		}
+	    }
+	    dir_ptr = readdir(top);
+	}
+
+	if (errno != old_errno) {
+	    return old_errno;
+	}
+    }
+
 
     return 0;
 }
@@ -51,7 +158,7 @@ int
 func_echo()
 {
     for (int i = 1; i < STD_BUF && last_command[i]; ++i) {
-        printf("%s ", last_command[i]);
+	printf("%s ", last_command[i]);
     }
     printf("\n");
     return 0;
@@ -62,12 +169,12 @@ func_execvp()
 {
     int pid = fork();
     if (pid == 0) {
-        IS_SUBPEXEC = 1;
-        execvp(last_command[0], last_command);
-        printf("Command not found\n");
-        _exit(-1);
+	IS_SUBPEXEC = 1;
+	execvp(last_command[0], last_command);
+	printf("Command not found\n");
+	_exit(-1);
     } else {
-        waitpid(pid, NULL, 0);
+	waitpid(pid, NULL, 0);
     }
     return 0;
 }
@@ -78,9 +185,9 @@ func_pinfo()
     char path_to_proc[STD_BUF] = "/proc/";
 
     if (last_command[1]) {
-        strcat(path_to_proc, last_command[1]);
+	strcat(path_to_proc, last_command[1]);
     } else {
-        strcat(path_to_proc, "self");
+	strcat(path_to_proc, "self");
     }
 
     char prefix_path[STD_BUF];
@@ -91,7 +198,7 @@ func_pinfo()
     FILE* proc = fopen(path_to_proc, "r");
     
     if (!proc) {
-        return errno;
+	return errno;
     }
 
     int proc_pid;
@@ -101,7 +208,7 @@ func_pinfo()
 
     char mem[STD_BUF];
     for (int i = 0; i < 20; ++i) {
-        fscanf(proc, "%s", mem);
+	fscanf(proc, "%s", mem);
     }
     fclose(proc);
 
@@ -127,19 +234,19 @@ func_history()
     int items_to_print = 10;
     int old_errno = errno;
     if (last_command[1]) {
-        items_to_print = strtol(last_command[1], (char **)NULL, 10);
+	items_to_print = strtol(last_command[1], (char **)NULL, 10);
     }
 
     int cur = items_to_print - 1;
     while (cur > -1) {
-        if (history[cur]) {
-            printf("%s\n", history[cur]);
-        }
-        cur--;
+	if (history[cur]) {
+	    printf("%s\n", history[cur]);
+	}
+	cur--;
     }
 
     if (errno != old_errno) {
-        return errno;
+	return errno;
     }
     return 0;
 }

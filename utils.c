@@ -7,7 +7,7 @@ char*
 get_prompt(char* pwd)
 {
     if (prompt)
-        free(prompt);
+	free(prompt);
     
     prompt = (char *)malloc(1024*sizeof(char));
 
@@ -23,17 +23,17 @@ get_prompt(char* pwd)
     memset(buf, 0, sizeof(buf));
     
     if (strcmp(pwd, home) == 0){
-        strcat(prompt, "~");
+	strcat(prompt, "~");
     } else {
-        if (!strncmp(home, pwd, strlen(home))) {
-            char* tmp = pwd + HOME_LEN;
-            sprintf(buf, "~%s", tmp);
-            strcat(prompt, buf);
-            
-        } else {
-            sprintf(buf, "%s", pwd);
-            strcat(prompt, buf);
-        }
+	if (!strncmp(home, pwd, strlen(home))) {
+	    char* tmp = pwd + HOME_LEN;
+	    sprintf(buf, "~%s", tmp);
+	    strcat(prompt, buf);
+	    
+	} else {
+	    sprintf(buf, "%s", pwd);
+	    strcat(prompt, buf);
+	}
     }
     strcat(prompt, ">");
     return prompt;
@@ -43,11 +43,11 @@ void
 add_to_history()
 {
     if (history[19]) {
-        free(history[19]);
+	free(history[19]);
     }
 
     for (int i = 19; i >= 1; --i) {
-        history[i] = history[i-1];
+	history[i] = history[i-1];
     }
 
     history[0] = (char *)malloc(STD_BUF * sizeof(char));
@@ -58,8 +58,8 @@ add_to_history()
 
     FILE* hist_file = fopen(hist_file_loc, "w");
     for (int i = 0; history[i] && i < 20; ++i) {
-        fputs(history[i], hist_file);
-        fflush(hist_file);
+	fputs(history[i], hist_file);
+	fflush(hist_file);
     }
 }
 
@@ -67,7 +67,7 @@ void
 reset(char* arr[])
 {
     for (int i = 0; i < STD_BUF; ++i) {
-        arr[i] = NULL;
+	arr[i] = NULL;
     }
 }
 
@@ -78,7 +78,7 @@ tokenize_command(char* cmd)
     int cur = 0;
     last_command[cur] = strtok(cmd, " \r\t\n");
     while (last_command[cur]) {
-        last_command[++cur] = strtok(NULL, " \r\t\n");
+	last_command[++cur] = strtok(NULL, " \r\t\n");
     }
     last_command_end = --cur;
 }
@@ -87,11 +87,11 @@ int
 check_is_bg(char* str)
 {
     if (str[strlen(str)-1] == '&') {
-        str[strlen(str)-1] = '\0';
-        return 1;
+	str[strlen(str)-1] = '\0';
+	return 1;
     } else if (!strcmp(last_command[last_command_end], "&")) {
-        last_command[last_command_end--] = NULL;
-        return 1;
+	last_command[last_command_end--] = NULL;
+	return 1;
     }
     return 0;
 }
@@ -104,13 +104,13 @@ get_input()
     strcpy(last_input, input);
 
     if (!strcmp(input, "\n")) {
-        return 1;
+	return 1;
     }
     int cur = 0;
     reset(one_shot);
     one_shot[cur] = strtok(input, ";");
     while (one_shot[cur]) {
-        one_shot[++cur] = strtok(NULL, ";");
+	one_shot[++cur] = strtok(NULL, ";");
     }
     return 0;
 }
@@ -125,10 +125,10 @@ int call_function_bg()
 {
     int pid = fork();
     if (pid == 0) {
-        IS_SUBP = 1;
-        return call_function();
+	IS_SUBP = 1;
+	return call_function();
     } else {
-        printf("[+1] pid: %d\n", pid);
-        return 0;
+	printf("[+1] pid: %d\n", pid);
+	return 0;
     }
 }

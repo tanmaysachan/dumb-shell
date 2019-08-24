@@ -5,6 +5,8 @@
 
 char* home;
 
+char* cwd;
+
 int HOME_LEN;
 
 char* prompt;
