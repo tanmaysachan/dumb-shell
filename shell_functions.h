@@ -50,37 +50,11 @@ func_ls()
     DIR* top;
     struct dirent* dir_ptr;
     int old_errno;
-    if (last_command[1] == NULL || last_command[1][0] != '-') {
-	old_errno = errno;
-	if (last_command[1] == NULL) {
-	    top = opendir(cwd);
-	} else {
-	    top = opendir(last_command[1]);
-	}
-
-	if (errno != old_errno) {
-	    return errno;
-	}
-
-	old_errno = errno;
-	dir_ptr = readdir(top);
-	while(dir_ptr){
-
-	    if(dir_ptr->d_name[0] != '.' && strcmp(dir_ptr->d_name, "..")) {
-		printf("%s\n",dir_ptr->d_name);
-	    }
-	    dir_ptr = readdir(top);
-	}
-
-	if (errno != old_errno) {
-	    return errno;
-	}
-
-    } else if (last_command[1] && last_command[1][0] == '-') {
+    if (last_command_end <= 3) {
 	int show_all = 0;
 	int show_long = 0;
 
-	for (int i = 0; i < strlen(last_command[1]); ++i) {
+	for (int i = 0; last_command[1] && i < strlen(last_command[1]); ++i) {
 	    if (last_command[1][i] == 'a') show_all = 1;
 	    if (last_command[1][i] == 'l') show_long = 1;
 	}
@@ -91,7 +65,7 @@ func_ls()
 	}
 
 	old_errno = errno;
-	if (last_command[last_command_end][0] != '-') {
+	if (last_command_end && last_command[last_command_end][0] != '-') {
 	    top = opendir(last_command[last_command_end]);
 	} else {
 	    top = opendir(cwd);
@@ -148,6 +122,8 @@ func_ls()
 	if (errno != old_errno) {
 	    return old_errno;
 	}
+    } else {
+        return -69;
     }
 
 

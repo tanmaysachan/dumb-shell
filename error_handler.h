@@ -9,9 +9,9 @@ handle_error(char* cmd, int err)
 	printf("execvp failed\n");
 	return;
     }
-    if (!strcmp(cmd, "cd")) {
+    if (!strcmp(cmd, "cd") || !strcmp(cmd, "ls")) {
 	if (err == -69) {
-	    printf("1 Argument expected\n");
+	    printf("Invalid arguments\n");
 	    return;
 	}
     }
