@@ -11,7 +11,8 @@ int
 func_cd()
 {
     int old_errno = errno;
-    if (last_command[2] != NULL) {
+    if (last_command_end >= 2) {
+        printf("%d\n\n", last_command_end);
 	return -69;
     }
     if (last_command[1] == NULL || !strcmp(last_command[1], "~")) {

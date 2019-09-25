@@ -1,6 +1,5 @@
 #include <shell.h>
 #include <utils.h>
-#include <error_handler.h>
 
 void
 initialise()
@@ -46,9 +45,23 @@ run_shell()
 	printf("%s ", get_prompt(getcwd(pwd, sizeof(pwd))));
 	strcpy(cwd, pwd);
 
-	int empty_inp = get_input();
-	if (empty_inp)
+	int inp = get_input(NULL);
+	if (inp == -11)
 	    continue;
+	else if (inp) {
+	    int prev = inp;
+	    prev--;
+	    if (history[prev]) {
+		get_input(history[prev]);
+		printf("%s ", get_prompt(getcwd(pwd, sizeof(pwd))));
+		printf("%s\n", history[prev]);
+		getchar();
+	    }
+	    else {
+		printf("Command not found\n");
+		continue;
+	    }
+	}
 
 	add_to_history();
 
@@ -58,21 +71,77 @@ run_shell()
 	    getcwd(pwd, sizeof(pwd));
 	    strcpy(cwd, pwd);
 	    tokenize_command(one_shot[cur++]);
-	    int ret_val;
-	    if (check_is_bg(last_command[last_command_end])) {
-		ret_val = call_function_bg();
-	    } else {
-		ret_val = call_function();
-	    }
-	    if (ret_val) {
-		handle_error(last_command[0], ret_val);
-	    }
+            int pipe_cnt = 0;
+            int pipe_locations[STD_BUF];
+            int pl_cur = 0;
+
+            for (int i = 0; i <= last_command_full_end; i++) {
+                if (last_command_full[i][0] == '|') {
+                    pipe_cnt++;
+                    pipe_locations[pl_cur] = i;
+                    pl_cur++;
+                }
+            }
+            
+            int cur_pipe = 0;
+            int last_pipe = -1;
+
+            int savestdin = dup(0);
+            int savestdout = dup(1);
+
+            while (1) {
+                reset(last_command);
+                last_command_end = 0;
+
+                if (cur_pipe == pl_cur) {
+                    for (int i = last_pipe + 1, j = 0; i <= last_command_full_end; i++, j++) {
+                        last_command[j] = last_command_full[i];
+                        last_command_end++;
+                    }
+                } else {
+                    for (int i = last_pipe + 1, j = 0; i < pipe_locations[cur_pipe]; i++, j++) {
+                        last_command[j] = last_command_full[i];
+                        last_command_end++;
+                    }
+                }
+
+                last_command_end--;
+                last_pipe = pipe_locations[cur_pipe];
+                cur_pipe++;
+
+                if (cur_pipe <= pl_cur) {
+                    int status;
+                    int fds[2];
+                    pipe(fds);
+
+                    int pid = fork();
+
+                    if (pid == 0) {
+                        dup2(fds[1], 1);
+                        exec_command(last_command[last_command_end]);
+                        abort();
+                    } else {
+                        dup2(fds[0], 0);
+                        close(fds[1]);
+                        waitpid(pid, &status, 0);
+                    }
+
+                    close(fds[0]);
+                    close(fds[1]);
+                } else {
+                    dup2(savestdout, 1);
+                    exec_command(last_command[last_command_end]);
+                    break;
+                }
+            }
+            dup2(savestdin, 0);
+            dup2(savestdout, 1);
 	}
 
 	if (IS_SUBP) {
 	    printf("\r[-1] command: %s, pid: %d                \n", last_command[0], getpid());
 	    fflush(stdin);
-            fputc('\n', stdout);
+	    fputc('\n', stdout);
 	    exit(0);
 	} else if (IS_SUBPEXEC) {
 	    fflush(stdin);

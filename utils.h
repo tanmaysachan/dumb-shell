@@ -10,9 +10,11 @@ void reset(char* arr[]);
 
 void tokenize_command(char* cmd);
 
+void exec_command(char* str);
+
 int check_is_bg(char* str);
 
-int get_input();
+int get_input(char* pre_inp);
 
 int command_valid();
 
