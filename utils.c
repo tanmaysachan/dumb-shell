@@ -98,6 +98,7 @@ exec_command(char* str) {
         int fdout;
         if (!strcmp(last_command[last_command_end-1], ">>")) fdout = open(last_command[last_command_end], O_WRONLY | O_CREAT | O_APPEND, S_IRWXU);
         else if (last_command[last_command_end-1][0] == '>') fdout = open(last_command[last_command_end], O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
+        else return;
         dup2(fdin, 0);
         dup2(fdout, 1);
         int tmp = last_command_end;
@@ -119,6 +120,7 @@ exec_command(char* str) {
         int fdout;
         if (!strcmp(last_command[last_command_end-1], ">>")) fdout = open(last_command[last_command_end], O_WRONLY | O_CREAT | O_APPEND, S_IRWXU);
         else if (last_command[last_command_end-1][0] == '>') fdout = open(last_command[last_command_end], O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
+        else return;
         dup2(fdout, 1);
         int tmp = last_command_end;
         for (int i = last_command_end-1; i <= tmp; i++) {
@@ -163,31 +165,32 @@ get_input(char* pre_inp)
     } else {
         fgets(input, STD_BUF, stdin);
         strcpy(last_input, input);
-    }
-
-    if (!strcmp(input, "\n")) {
-	return -11;
-    }
     
-    int cur = 0;
-    int ret = 0;
-    while (1) {
-	if (cur + 2 >= strlen(input)-1) {
-	    if (ret >= 1) {
-		return ret;
-	    }
-	    break;
-	}
-	if (input[cur] == 27 && input[cur+1] == 91 &&
-	    input[cur+2] == 65) {
-	    ret++;
-	    cur += 3;
-	} else {
-	    break;
-	}
+
+        if (!strcmp(input, "\n")) {
+            return -11;
+        }
+        
+        int cur = 0;
+        int ret = 0;
+        while (1) {
+            if (cur + 2 >= strlen(input)-1) {
+                if (ret >= 1) {
+                    return ret;
+                }
+                break;
+            }
+            if (input[cur] == 27 && input[cur+1] == 91 &&
+                input[cur+2] == 65) {
+                ret++;
+                cur += 3;
+            } else {
+                break;
+            }
+        }
     }
 
-    cur = 0;
+    int cur = 0;
     reset(one_shot);
     one_shot[cur] = strtok(input, ";");
     while (one_shot[cur]) {
@@ -202,14 +205,68 @@ call_function()
     return call_function_();
 }
 
+void
+add_proc(char** pname, int pid)
+{
+    for (int i = 0; i < STD_BUF; i++) {
+        if (PROCS[i].pid == -1) {
+            
+            for (int j = 0; j < STD_BUF; j++) {
+                PROCS[i].pname[j] = (char *)malloc(STD_BUF);
+                if (pname[j]) strcpy(PROCS[i].pname[j], pname[j]);
+                else PROCS[i].pname[j] = NULL;
+            }
+            PROCS[i].pid = pid;
+            PROCS[i].state = 1;
+            break;
+        }
+    }
+}
+
+void
+del_proc(int pid)
+{
+    for (int i = 0; i < STD_BUF; i++) {
+        if (PROCS[i].pid == pid) {
+            for (int j = i; j < STD_BUF-1; j++) {
+                for (int k = 0; k < STD_BUF; k++) {
+                    if(PROCS[j+1].pname[k])strcpy(PROCS[j].pname[k], PROCS[j+1].pname[k]);
+                    else PROCS[j].pname[k] = NULL;
+                    PROCS[j].pid = PROCS[j+1].pid;
+                    PROCS[j].state = PROCS[j+1].state;
+                }
+            }
+            break;
+        }
+    }
+}
+
+void
+find_and_delete(int sig)
+{
+    for (int i = 0; i < STD_BUF; i++) {
+        if (PROCS[i].pid != -1) {
+            int status;
+            if (waitpid(PROCS[i].pid, &status, WNOHANG) > 0) {
+                printf("[-1] pid: %d\n", PROCS[i].pid);
+                del_proc(PROCS[i].pid);
+            }
+        }
+    }
+}
+
+void
+handle_sigs(int sig)
+{
+    if (G_PID != -1) {
+        kill(G_PID, sig);
+    }
+}
+
 int call_function_bg()
 {
-    int pid = fork();
-    if (pid == 0) {
-	IS_SUBP = 1;
-	return call_function();
-    } else {
-	printf("[+1] pid: %d\n", pid);
-	return 0;
-    }
+    IS_SUBP = 1;
+    call_function();
+    IS_SUBP = 0;
+    return 0;
 }

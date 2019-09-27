@@ -21,8 +21,23 @@ call_function_()
     if (!strcmp(last_command[0], "history")) {
         return func_history();
     }
-    if (!strcmp(last_command[0], "exit")) {
-        return func_exit();
+    if (!strcmp(last_command[0], "quit")) {
+        return func_quit();
+    }
+    if (!strcmp(last_command[0], "setenv")) {
+        return func_setenv();
+    }
+    if (!strcmp(last_command[0], "unsetenv")) {
+        return func_unsetenv();
+    }
+    if (!strcmp(last_command[0], "jobs")) {
+        return func_jobs();
+    }
+    if (!strcmp(last_command[0], "kjob")) {
+        return func_kjob();
+    }
+    if (!strcmp(last_command[0], "overkill")) {
+        return func_overkill();
     }
     return func_execvp();
 }

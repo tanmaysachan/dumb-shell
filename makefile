@@ -1,2 +1,2 @@
 main:
-	gcc -I./ utils.c shell.c error_handler.h -g
+	gcc -I./ utils.c shell.c shell_functions.c error_handler.h -g

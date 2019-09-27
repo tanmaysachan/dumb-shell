@@ -34,12 +34,25 @@ initialise()
 	history[cur] = NULL;
     }
     
+    for (int i = 0; i < STD_BUF; i++) {
+        for (int j = 0; j < STD_BUF; j++) {
+            PROCS[i].pname[j] = NULL;
+        }
+        PROCS[i].pid = -1;
+        PROCS[i].state = -1;
+    }
+
+    G_PID = -1;
+
 }
 
 void
 run_shell()
 {
     while (1) {
+        signal(SIGCHLD, find_and_delete);
+        signal(SIGINT, handle_sigs);
+        signal(SIGTSTP, handle_sigs);
 
 	char pwd[STD_BUF];
 	printf("%s ", get_prompt(getcwd(pwd, sizeof(pwd))));
@@ -88,19 +101,27 @@ run_shell()
 
             int savestdin = dup(0);
             int savestdout = dup(1);
-
+            char TEMP[STD_BUF][STD_BUF];
+            for (int i = 0; i < STD_BUF; i++) {
+                if(last_command_full[i]) strcpy(TEMP[i], last_command_full[i]);
+                else break;
+            }
             while (1) {
                 reset(last_command);
                 last_command_end = 0;
 
                 if (cur_pipe == pl_cur) {
                     for (int i = last_pipe + 1, j = 0; i <= last_command_full_end; i++, j++) {
-                        last_command[j] = last_command_full[i];
+                        if(last_command[j])free(last_command[j]);
+                        last_command[j] = (char*)malloc(STD_BUF);
+                        strcpy(last_command[j], TEMP[i]);
                         last_command_end++;
                     }
                 } else {
                     for (int i = last_pipe + 1, j = 0; i < pipe_locations[cur_pipe]; i++, j++) {
-                        last_command[j] = last_command_full[i];
+                        if (last_command[j]) free(last_command[j]);
+                        last_command[j] = (char*)malloc(STD_BUF);
+                        strcpy(last_command[j], TEMP[i]);
                         last_command_end++;
                     }
                 }
@@ -136,16 +157,6 @@ run_shell()
             }
             dup2(savestdin, 0);
             dup2(savestdout, 1);
-	}
-
-	if (IS_SUBP) {
-	    printf("\r[-1] command: %s, pid: %d                \n", last_command[0], getpid());
-	    fflush(stdin);
-	    fputc('\n', stdout);
-	    exit(0);
-	} else if (IS_SUBPEXEC) {
-	    fflush(stdin);
-	    exit(0);
 	}
     }
 }

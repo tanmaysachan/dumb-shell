@@ -20,4 +20,12 @@ int command_valid();
 
 int call_function();
 
+void add_proc(char** pname, int pid);
+
+void del_proc(int pid);
+
+void find_and_delete(int sig);
+
+void handle_sigs(int sig);
+
 int call_function_bg();

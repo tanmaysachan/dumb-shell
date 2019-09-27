@@ -24,7 +24,11 @@ char* history[20];
 
 int last_command_end;
 
+int G_PID;
+
 int last_command_full_end;
+
+struct {char* pname[STD_BUF]; int pid; int state;} PROCS[STD_BUF];
 
 int IS_SUBP;
 
