@@ -9,12 +9,15 @@ handle_error(char* cmd, int err)
 	printf("execvp failed\n");
 	return;
     }
-    if (!strcmp(cmd, "cd") || !strcmp(cmd, "ls")) {
-	if (err == -69) {
-	    printf("Invalid arguments\n");
-	    return;
-	}
+    if (err == -69) {
+        printf("Invalid arguments\n");
+        return;
     }
+    if (err == -100) {
+        printf("Process does not exist\n");
+        return;
+    }
+    
     char* error = strerror(err);
     printf("%s\n", error);
     return;

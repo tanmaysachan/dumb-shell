@@ -11,3 +11,6 @@ int func_history();
 int func_kjob();
 int func_jobs();
 int func_overkill();
+int func_fg();
+int func_bg();
+int func_cronjob();

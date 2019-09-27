@@ -4,6 +4,12 @@
 
 #define STD_BUF 1024
 
+struct PROCESS {
+    char* pname[STD_BUF];
+    int pid;
+    int state;
+};
+
 char* home;
 
 char* cwd;
@@ -28,7 +34,7 @@ int G_PID;
 
 int last_command_full_end;
 
-struct {char* pname[STD_BUF]; int pid; int state;} PROCS[STD_BUF];
+struct PROCESS PROCS[STD_BUF];
 
 int IS_SUBP;
 

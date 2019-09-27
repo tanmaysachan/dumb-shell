@@ -153,11 +153,60 @@ func_execvp()
         raise(SIGCHLD);
         _exit(0);
     } else {
-        G_PID = pid;
         if (!IS_SUBP) {
-            wait(NULL);
+            int status;
+            G_PID = pid;
+            waitpid(pid, &status, WUNTRACED);
+            if (WIFSTOPPED(status)) {
+                add_proc(last_command, pid);
+                for (int i = 0; i < STD_BUF; i++) {
+                    if (PROCS[i].pid == pid) {
+                        PROCS[i].state = 0;
+                        break;
+                    }
+                }
+            }
+            G_PID = -1;
         }
         else add_proc(last_command, pid);
+    }
+    return 0;
+}
+
+int
+func_bg()
+{
+    if (last_command_end != 1) return -69;
+    char* tmp;
+    int job_number = strtol(last_command[1], &tmp, 10);
+    job_number--;
+    if (job_number < 0  || PROCS[job_number].pid == -1) {
+        return -100;
+    }
+    kill(PROCS[job_number].pid, SIGCONT);
+    PROCS[job_number].state = 1;
+    return 0;
+}
+
+int func_fg()
+{
+    if (last_command_end != 1) return -69;
+    char* tmp;
+    int job_number = strtol(last_command[1], &tmp, 10);
+    job_number--;
+    if (job_number < 0 || PROCS[job_number].pid == -1) {
+        return -100;
+    }
+    signal(SIGCHLD, SIG_IGN);
+    kill(PROCS[job_number].pid, SIGCONT);
+    G_PID = PROCS[job_number].pid;
+    struct PROCESS A = PROCS[job_number];
+    del_proc(PROCS[job_number].pid);
+    int status;
+    waitpid(PROCS[job_number].pid, &status, WUNTRACED);
+    G_PID = -1;
+    if (WIFSTOPPED(status)) {
+        add_proc(A.pname, A.pid);
     }
     return 0;
 }
@@ -299,7 +348,42 @@ func_overkill()
 }
 
 int
+func_cronjob()
+{
+    if (last_command_end != 6) return -69;
+    char* tmp;
+    int interval = strtol(last_command[4], &tmp, 10);
+    int till = strtol(last_command[6], &tmp, 10);
+    int reps = till/interval;
+
+    char* TEMP[STD_BUF];
+    for (int i = 0; i < STD_BUF; i++) {
+        TEMP[i] = NULL;
+    }
+    int cnt = 0;
+    for (int i = 2; i <= last_command_end-4; i++) {
+        TEMP[i-2] = (char *)malloc(STD_BUF);
+        strcpy(TEMP[i-2], last_command[i]);
+        cnt++;
+    }
+    last_command_end = --cnt;
+
+    for (int i = 0; i < STD_BUF; i++) {
+        if(TEMP[i]) strcpy(last_command[i], TEMP[i]);
+        else last_command[i] = NULL;
+    }
+
+    int pid = fork();
+    while (pid == 0 && reps--) {
+        sleep(interval);
+        exec_command(last_command[last_command_end]);
+    }
+    return 0;
+}
+
+int
 func_quit()
 {
+    func_overkill();
     exit(0);
 }

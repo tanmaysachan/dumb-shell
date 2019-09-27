@@ -39,5 +39,14 @@ call_function_()
     if (!strcmp(last_command[0], "overkill")) {
         return func_overkill();
     }
+    if (!strcmp(last_command[0], "fg")) {
+        return func_fg();
+    }
+    if (!strcmp(last_command[0], "bg")) {
+        return func_bg();
+    }
+    if (!strcmp(last_command[0], "cronjob")) {
+        return func_cronjob();
+    }
     return func_execvp();
 }
