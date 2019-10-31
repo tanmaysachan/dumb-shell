@@ -55,7 +55,7 @@ run_shell()
         signal(SIGTSTP, handle_sigs);
 
 	char pwd[STD_BUF];
-	printf("%s ", get_prompt(getcwd(pwd, sizeof(pwd))));
+	printf("\033[0;1;34m%s\033[0m", get_prompt(getcwd(pwd, sizeof(pwd))));
 	strcpy(cwd, pwd);
 
 	int inp = get_input(NULL);
