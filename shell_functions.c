@@ -17,9 +17,7 @@ int func_cd()
         return -69;
     }
     if (last_command[1] == NULL || !strcmp(last_command[1], "~"))
-    {
         chdir(home);
-    }
     else if (last_command[1][0] == '~')
     {
         chdir(home);
@@ -30,13 +28,9 @@ int func_cd()
         }
     }
     else
-    {
         chdir(last_command[1]);
-    }
     if (errno != old_errno)
-    {
         return errno;
-    }
     return 0;
 }
 
@@ -46,9 +40,7 @@ int func_pwd()
     int old_errno = errno;
     getcwd(tmp, sizeof(tmp));
     if (errno != old_errno)
-    {
         return errno;
-    }
     printf("%s\n", tmp);
     return 0;
 }
@@ -81,26 +73,18 @@ int func_ls()
 
         old_errno = errno;
         if (last_command_end && last_command[last_command_end][0] != '-')
-        {
             top = opendir(last_command[last_command_end]);
-        }
         else
-        {
             top = opendir(cwd);
-        }
 
         if (errno != old_errno)
-        {
             return old_errno;
-        }
 
         old_errno = errno;
         dir_ptr = readdir(top);
 
         if (errno != old_errno)
-        {
             return old_errno;
-        }
 
         old_errno = errno;
         while (dir_ptr)
@@ -137,22 +121,16 @@ int func_ls()
                            dir_status.st_size, date, dir_ptr->d_name);
                 }
                 else
-                {
                     printf("%s\n", dir_ptr->d_name);
-                }
             }
             dir_ptr = readdir(top);
         }
 
         if (errno != old_errno)
-        {
             return old_errno;
-        }
     }
     else
-    {
         return -69;
-    }
 
     return 0;
 }
@@ -160,9 +138,7 @@ int func_ls()
 int func_echo()
 {
     for (int i = 1; i < STD_BUF && last_command[i]; ++i)
-    {
         printf("%s ", last_command[i]);
-    }
     printf("\n");
     return 0;
 }
@@ -189,13 +165,11 @@ int func_execvp()
             {
                 add_proc(last_command, pid);
                 for (int i = 0; i < STD_BUF; i++)
-                {
                     if (PROCS[i].pid == pid)
                     {
                         PROCS[i].state = 0;
                         break;
                     }
-                }
             }
             G_PID = -1;
         }
@@ -213,9 +187,7 @@ int func_bg()
     int job_number = strtol(last_command[1], &tmp, 10);
     job_number--;
     if (job_number < 0 || PROCS[job_number].pid == -1)
-    {
         return -100;
-    }
     kill(PROCS[job_number].pid, SIGCONT);
     PROCS[job_number].state = 1;
     return 0;
@@ -229,9 +201,7 @@ int func_fg()
     int job_number = strtol(last_command[1], &tmp, 10);
     job_number--;
     if (job_number < 0 || PROCS[job_number].pid == -1)
-    {
         return -100;
-    }
     signal(SIGCHLD, SIG_IGN);
     kill(PROCS[job_number].pid, SIGCONT);
     G_PID = PROCS[job_number].pid;
@@ -241,9 +211,7 @@ int func_fg()
     waitpid(PROCS[job_number].pid, &status, WUNTRACED);
     G_PID = -1;
     if (WIFSTOPPED(status))
-    {
         add_proc(A.pname, A.pid);
-    }
     return 0;
 }
 
@@ -252,13 +220,9 @@ int func_pinfo()
     char path_to_proc[STD_BUF] = "/proc/";
 
     if (last_command[1])
-    {
         strcat(path_to_proc, last_command[1]);
-    }
     else
-    {
         strcat(path_to_proc, "self");
-    }
 
     char prefix_path[STD_BUF];
     strcpy(prefix_path, path_to_proc);
@@ -268,9 +232,7 @@ int func_pinfo()
     FILE *proc = fopen(path_to_proc, "r");
 
     if (!proc)
-    {
         return errno;
-    }
 
     int proc_pid;
     char proc_name[STD_BUF];
@@ -279,9 +241,7 @@ int func_pinfo()
 
     char mem[STD_BUF];
     for (int i = 0; i < 20; ++i)
-    {
         fscanf(proc, "%s", mem);
-    }
     fclose(proc);
 
     printf("pid -- %d\n", proc_pid);
@@ -305,50 +265,36 @@ int func_history()
     int items_to_print = 10;
     int old_errno = errno;
     if (last_command[1])
-    {
         items_to_print = strtol(last_command[1], (char **)NULL, 10);
-    }
 
     int cur = items_to_print - 1;
     while (cur > -1)
     {
         if (history[cur])
-        {
             printf("%s\n", history[cur]);
-        }
         cur--;
     }
 
     if (errno != old_errno)
-    {
         return errno;
-    }
     return 0;
 }
 
 int func_setenv()
 {
     if (last_command_end == 0 || last_command_end > 2)
-    {
         return -69;
-    }
     if (last_command[last_command_end])
-    {
         setenv(last_command[last_command_end - 1], last_command[last_command_end], 1);
-    }
     else
-    {
         setenv(last_command[last_command_end], "", 1);
-    }
     return 0;
 }
 
 int func_unsetenv()
 {
     if (last_command_end == 0)
-    {
         return -69;
-    }
     unsetenv(last_command[1]);
     return 0;
 }
@@ -356,17 +302,13 @@ int func_unsetenv()
 int func_jobs()
 {
     if (last_command_end != 0)
-    {
         return -69;
-    }
 
     for (int i = 0; i < STD_BUF && PROCS[i].pid != -1; i++)
     {
         printf("[%d] %s ", i + 1, (PROCS[i].state ? "Running" : "Stopped"));
         for (int j = 0; j < STD_BUF && PROCS[i].pname[j]; j++)
-        {
             printf("%s ", PROCS[i].pname[j]);
-        }
         printf("[%d]\n", PROCS[i].pid);
     }
     return 0;
@@ -387,12 +329,8 @@ int func_kjob()
 int func_overkill()
 {
     for (int i = 0; i < STD_BUF; i++)
-    {
         if (PROCS[i].pid != -1)
-        {
             kill(PROCS[i].pid, SIGKILL);
-        }
-    }
     return 0;
 }
 
@@ -407,9 +345,7 @@ int func_cronjob()
 
     char *TEMP[STD_BUF];
     for (int i = 0; i < STD_BUF; i++)
-    {
         TEMP[i] = NULL;
-    }
     int cnt = 0;
     for (int i = 2; i <= last_command_end - 4; i++)
     {

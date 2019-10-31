@@ -16,7 +16,6 @@ void initialise()
     int cur = 0;
 
     if (hist_file)
-    {
         while (1)
         {
             char *tmp_buf = (char *)malloc(STD_BUF * sizeof(char));
@@ -28,23 +27,16 @@ void initialise()
                 cur++;
             }
             else
-            {
                 break;
-            }
         }
-    }
 
     for (int i = cur; i < 20; i++)
-    {
         history[cur] = NULL;
-    }
 
     for (int i = 0; i < STD_BUF; i++)
     {
         for (int j = 0; j < STD_BUF; j++)
-        {
             PROCS[i].pname[j] = NULL;
-        }
         PROCS[i].pid = -1;
         PROCS[i].state = -1;
     }
@@ -99,14 +91,12 @@ void run_shell()
             int pl_cur = 0;
 
             for (int i = 0; i <= last_command_full_end; i++)
-            {
                 if (last_command_full[i][0] == '|')
                 {
                     pipe_cnt++;
                     pipe_locations[pl_cur] = i;
                     pl_cur++;
                 }
-            }
 
             int cur_pipe = 0;
             int last_pipe = -1;
@@ -127,7 +117,6 @@ void run_shell()
                 last_command_end = 0;
 
                 if (cur_pipe == pl_cur)
-                {
                     for (int i = last_pipe + 1, j = 0; i <= last_command_full_end; i++, j++)
                     {
                         if (last_command[j])
@@ -136,9 +125,7 @@ void run_shell()
                         strcpy(last_command[j], TEMP[i]);
                         last_command_end++;
                     }
-                }
                 else
-                {
                     for (int i = last_pipe + 1, j = 0; i < pipe_locations[cur_pipe]; i++, j++)
                     {
                         if (last_command[j])
@@ -147,7 +134,6 @@ void run_shell()
                         strcpy(last_command[j], TEMP[i]);
                         last_command_end++;
                     }
-                }
 
                 last_command_end--;
                 last_pipe = pipe_locations[cur_pipe];
