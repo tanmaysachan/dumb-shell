@@ -4,29 +4,30 @@
 
 #define STD_BUF 1024
 
-struct PROCESS {
-    char* pname[STD_BUF];
+struct PROCESS
+{
+    char *pname[STD_BUF];
     int pid;
     int state;
 };
 
-char* home;
+char *home;
 
-char* cwd;
+char *cwd;
 
 int HOME_LEN;
 
-char* prompt;
+char *prompt;
 
-char* one_shot[STD_BUF];
+char *one_shot[STD_BUF];
 
-char* last_command[STD_BUF];
+char *last_command[STD_BUF];
 
-char* last_command_full[STD_BUF];
+char *last_command_full[STD_BUF];
 
 char last_input[STD_BUF];
 
-char* history[20];
+char *history[20];
 
 int last_command_end;
 

@@ -8,159 +8,190 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-int
-func_cd()
+int func_cd()
 {
     int old_errno = errno;
-    if (last_command_end >= 2) {
+    if (last_command_end >= 2)
+    {
         printf("%d\n\n", last_command_end);
-	return -69;
+        return -69;
     }
-    if (last_command[1] == NULL || !strcmp(last_command[1], "~")) {
-	chdir(home);
-    } else if (last_command[1][0] == '~') {
-	chdir(home);
-	if (strlen(last_command[1]) > 2) {
-	    last_command[1] += 2;
-	    chdir(last_command[1]);
-	}
-    } else {
-	chdir(last_command[1]);
+    if (last_command[1] == NULL || !strcmp(last_command[1], "~"))
+    {
+        chdir(home);
     }
-    if (errno != old_errno) {
-	return errno;
+    else if (last_command[1][0] == '~')
+    {
+        chdir(home);
+        if (strlen(last_command[1]) > 2)
+        {
+            last_command[1] += 2;
+            chdir(last_command[1]);
+        }
+    }
+    else
+    {
+        chdir(last_command[1]);
+    }
+    if (errno != old_errno)
+    {
+        return errno;
     }
     return 0;
 }
 
-int
-func_pwd()
+int func_pwd()
 {
     char tmp[STD_BUF];
     int old_errno = errno;
     getcwd(tmp, sizeof(tmp));
-    if (errno != old_errno) {
-	return errno;
+    if (errno != old_errno)
+    {
+        return errno;
     }
     printf("%s\n", tmp);
     return 0;
 }
 
-int
-func_ls()
+int func_ls()
 {
-    DIR* top;
-    struct dirent* dir_ptr;
+    DIR *top;
+    struct dirent *dir_ptr;
     int old_errno;
-    if (last_command_end <= 3) {
-	int show_all = 0;
-	int show_long = 0;
+    if (last_command_end <= 3)
+    {
+        int show_all = 0;
+        int show_long = 0;
 
-	for (int i = 0; last_command[1] && i < strlen(last_command[1]); ++i) {
-	    if (last_command[1][i] == 'a') show_all = 1;
-	    if (last_command[1][i] == 'l') show_long = 1;
-	}
+        for (int i = 0; last_command[1] && i < strlen(last_command[1]); ++i)
+        {
+            if (last_command[1][i] == 'a')
+                show_all = 1;
+            if (last_command[1][i] == 'l')
+                show_long = 1;
+        }
 
-	for (int i = 1; last_command[i]; ++i) {
-	    if (!strcmp(last_command[i], "-a")) show_all = 1;
-	    if (!strcmp(last_command[i], "-l")) show_long = 1;
-	}
+        for (int i = 1; last_command[i]; ++i)
+        {
+            if (!strcmp(last_command[i], "-a"))
+                show_all = 1;
+            if (!strcmp(last_command[i], "-l"))
+                show_long = 1;
+        }
 
-	old_errno = errno;
-	if (last_command_end && last_command[last_command_end][0] != '-') {
-	    top = opendir(last_command[last_command_end]);
-	} else {
-	    top = opendir(cwd);
-	}
+        old_errno = errno;
+        if (last_command_end && last_command[last_command_end][0] != '-')
+        {
+            top = opendir(last_command[last_command_end]);
+        }
+        else
+        {
+            top = opendir(cwd);
+        }
 
-	if (errno != old_errno) {
-	    return old_errno;
-	}
+        if (errno != old_errno)
+        {
+            return old_errno;
+        }
 
-	old_errno = errno;
-	dir_ptr = readdir(top);
+        old_errno = errno;
+        dir_ptr = readdir(top);
 
-	if (errno != old_errno) {
-	    return old_errno;
-	}
-	
-	old_errno = errno;
-	while (dir_ptr) {
-	    struct stat dir_status;
-	    if (show_all || (!show_all && dir_ptr->d_name[0] != '.' && strcmp(dir_ptr->d_name, ".."))) {
-		if (show_long) {
+        if (errno != old_errno)
+        {
+            return old_errno;
+        }
 
-		    stat(dir_ptr->d_name, &dir_status);
+        old_errno = errno;
+        while (dir_ptr)
+        {
+            struct stat dir_status;
+            if (show_all || (!show_all && dir_ptr->d_name[0] != '.' && strcmp(dir_ptr->d_name, "..")))
+            {
+                if (show_long)
+                {
 
-		    printf((S_ISDIR(dir_status.st_mode)) ? "d" : "-");
-		    printf((dir_status.st_mode & S_IRUSR) ? "r" : "-");
-		    printf((dir_status.st_mode & S_IWUSR) ? "w" : "-");
-		    printf((dir_status.st_mode & S_IXUSR) ? "x" : "-");
-		    printf((dir_status.st_mode & S_IRGRP) ? "r" : "-");
-		    printf((dir_status.st_mode & S_IWGRP) ? "w" : "-");
-		    printf((dir_status.st_mode & S_IXGRP) ? "x" : "-");
-		    printf((dir_status.st_mode & S_IROTH) ? "r" : "-");
-		    printf((dir_status.st_mode & S_IWOTH) ? "w" : "-");
-		    printf((dir_status.st_mode & S_IXOTH) ? "x" : "-");
-		    printf(" %lu", dir_status.st_nlink);
+                    stat(dir_ptr->d_name, &dir_status);
 
-		    struct passwd* psswd = getpwuid(dir_status.st_uid);
-		    struct group* grp = getgrgid(dir_status.st_gid);
-		    char* date;
+                    printf((S_ISDIR(dir_status.st_mode)) ? "d" : "-");
+                    printf((dir_status.st_mode & S_IRUSR) ? "r" : "-");
+                    printf((dir_status.st_mode & S_IWUSR) ? "w" : "-");
+                    printf((dir_status.st_mode & S_IXUSR) ? "x" : "-");
+                    printf((dir_status.st_mode & S_IRGRP) ? "r" : "-");
+                    printf((dir_status.st_mode & S_IWGRP) ? "w" : "-");
+                    printf((dir_status.st_mode & S_IXGRP) ? "x" : "-");
+                    printf((dir_status.st_mode & S_IROTH) ? "r" : "-");
+                    printf((dir_status.st_mode & S_IWOTH) ? "w" : "-");
+                    printf((dir_status.st_mode & S_IXOTH) ? "x" : "-");
+                    printf(" %lu", dir_status.st_nlink);
 
-		    date = (char *)malloc(STD_BUF * sizeof(char));
+                    struct passwd *psswd = getpwuid(dir_status.st_uid);
+                    struct group *grp = getgrgid(dir_status.st_gid);
+                    char *date;
 
-		    strftime(date, 20, "%b  %d  %I:%M", gmtime(&(dir_status.st_ctime)));
+                    date = (char *)malloc(STD_BUF * sizeof(char));
 
-		    printf(" %s  %s  %ld  %s  %s\n", psswd->pw_name, grp->gr_name,
-			   dir_status.st_size, date, dir_ptr->d_name);
-		} else {
-		    printf("%s\n",dir_ptr->d_name);
-		}
-	    }
-	    dir_ptr = readdir(top);
-	}
+                    strftime(date, 20, "%b  %d  %I:%M", gmtime(&(dir_status.st_ctime)));
 
-	if (errno != old_errno) {
-	    return old_errno;
-	}
-    } else {
+                    printf(" %s  %s  %ld  %s  %s\n", psswd->pw_name, grp->gr_name,
+                           dir_status.st_size, date, dir_ptr->d_name);
+                }
+                else
+                {
+                    printf("%s\n", dir_ptr->d_name);
+                }
+            }
+            dir_ptr = readdir(top);
+        }
+
+        if (errno != old_errno)
+        {
+            return old_errno;
+        }
+    }
+    else
+    {
         return -69;
     }
-
 
     return 0;
 }
 
-int
-func_echo()
+int func_echo()
 {
-    for (int i = 1; i < STD_BUF && last_command[i]; ++i) {
-	printf("%s ", last_command[i]);
+    for (int i = 1; i < STD_BUF && last_command[i]; ++i)
+    {
+        printf("%s ", last_command[i]);
     }
     printf("\n");
     return 0;
 }
 
-int
-func_execvp()
+int func_execvp()
 {
     int pid = fork();
-    if (pid == 0) {
+    if (pid == 0)
+    {
         setpgid(0, 0);
-	execvp(last_command[0], last_command);
-	printf("Command not found\n");
+        execvp(last_command[0], last_command);
+        printf("Command not found\n");
         raise(SIGCHLD);
         _exit(0);
-    } else {
-        if (!IS_SUBP) {
+    }
+    else
+    {
+        if (!IS_SUBP)
+        {
             int status;
             G_PID = pid;
             waitpid(pid, &status, WUNTRACED);
-            if (WIFSTOPPED(status)) {
+            if (WIFSTOPPED(status))
+            {
                 add_proc(last_command, pid);
-                for (int i = 0; i < STD_BUF; i++) {
-                    if (PROCS[i].pid == pid) {
+                for (int i = 0; i < STD_BUF; i++)
+                {
+                    if (PROCS[i].pid == pid)
+                    {
                         PROCS[i].state = 0;
                         break;
                     }
@@ -168,19 +199,21 @@ func_execvp()
             }
             G_PID = -1;
         }
-        else add_proc(last_command, pid);
+        else
+            add_proc(last_command, pid);
     }
     return 0;
 }
 
-int
-func_bg()
+int func_bg()
 {
-    if (last_command_end != 1) return -69;
-    char* tmp;
+    if (last_command_end != 1)
+        return -69;
+    char *tmp;
     int job_number = strtol(last_command[1], &tmp, 10);
     job_number--;
-    if (job_number < 0  || PROCS[job_number].pid == -1) {
+    if (job_number < 0 || PROCS[job_number].pid == -1)
+    {
         return -100;
     }
     kill(PROCS[job_number].pid, SIGCONT);
@@ -190,11 +223,13 @@ func_bg()
 
 int func_fg()
 {
-    if (last_command_end != 1) return -69;
-    char* tmp;
+    if (last_command_end != 1)
+        return -69;
+    char *tmp;
     int job_number = strtol(last_command[1], &tmp, 10);
     job_number--;
-    if (job_number < 0 || PROCS[job_number].pid == -1) {
+    if (job_number < 0 || PROCS[job_number].pid == -1)
+    {
         return -100;
     }
     signal(SIGCHLD, SIG_IGN);
@@ -205,21 +240,24 @@ int func_fg()
     int status;
     waitpid(PROCS[job_number].pid, &status, WUNTRACED);
     G_PID = -1;
-    if (WIFSTOPPED(status)) {
+    if (WIFSTOPPED(status))
+    {
         add_proc(A.pname, A.pid);
     }
     return 0;
 }
 
-int
-func_pinfo()
+int func_pinfo()
 {
     char path_to_proc[STD_BUF] = "/proc/";
 
-    if (last_command[1]) {
-	strcat(path_to_proc, last_command[1]);
-    } else {
-	strcat(path_to_proc, "self");
+    if (last_command[1])
+    {
+        strcat(path_to_proc, last_command[1]);
+    }
+    else
+    {
+        strcat(path_to_proc, "self");
     }
 
     char prefix_path[STD_BUF];
@@ -227,10 +265,11 @@ func_pinfo()
 
     strcat(path_to_proc, "/stat");
 
-    FILE* proc = fopen(path_to_proc, "r");
-    
-    if (!proc) {
-	return errno;
+    FILE *proc = fopen(path_to_proc, "r");
+
+    if (!proc)
+    {
+        return errno;
     }
 
     int proc_pid;
@@ -239,8 +278,9 @@ func_pinfo()
     fscanf(proc, "%d %s %s", &proc_pid, proc_name, proc_status);
 
     char mem[STD_BUF];
-    for (int i = 0; i < 20; ++i) {
-	fscanf(proc, "%s", mem);
+    for (int i = 0; i < 20; ++i)
+    {
+        fscanf(proc, "%s", mem);
     }
     fclose(proc);
 
@@ -254,69 +294,77 @@ func_pinfo()
     char buf[STD_BUF];
 
     readlink(path_to_proc, buf, sizeof(buf));
-    
+
     printf("Executable path -- %s\n", buf);
 
     return 0;
 }
 
-int
-func_history()
+int func_history()
 {
     int items_to_print = 10;
     int old_errno = errno;
-    if (last_command[1]) {
-	items_to_print = strtol(last_command[1], (char **)NULL, 10);
+    if (last_command[1])
+    {
+        items_to_print = strtol(last_command[1], (char **)NULL, 10);
     }
 
     int cur = items_to_print - 1;
-    while (cur > -1) {
-	if (history[cur]) {
-	    printf("%s\n", history[cur]);
-	}
-	cur--;
+    while (cur > -1)
+    {
+        if (history[cur])
+        {
+            printf("%s\n", history[cur]);
+        }
+        cur--;
     }
 
-    if (errno != old_errno) {
-	return errno;
+    if (errno != old_errno)
+    {
+        return errno;
     }
     return 0;
 }
 
-int
-func_setenv()
+int func_setenv()
 {
-    if (last_command_end == 0 || last_command_end > 2) {
+    if (last_command_end == 0 || last_command_end > 2)
+    {
         return -69;
     }
-    if (last_command[last_command_end]) {
-        setenv(last_command[last_command_end-1], last_command[last_command_end], 1);
-    } else {
+    if (last_command[last_command_end])
+    {
+        setenv(last_command[last_command_end - 1], last_command[last_command_end], 1);
+    }
+    else
+    {
         setenv(last_command[last_command_end], "", 1);
     }
     return 0;
 }
 
-int
-func_unsetenv()
+int func_unsetenv()
 {
-    if (last_command_end == 0) {
+    if (last_command_end == 0)
+    {
         return -69;
     }
     unsetenv(last_command[1]);
     return 0;
 }
 
-int
-func_jobs()
+int func_jobs()
 {
-    if (last_command_end != 0) {
+    if (last_command_end != 0)
+    {
         return -69;
     }
 
-    for (int i = 0; i < STD_BUF && PROCS[i].pid != -1; i++) {
-        printf("[%d] %s ", i+1, (PROCS[i].state ? "Running" : "Stopped"));
-        for (int j = 0; j < STD_BUF && PROCS[i].pname[j]; j++) {
+    for (int i = 0; i < STD_BUF && PROCS[i].pid != -1; i++)
+    {
+        printf("[%d] %s ", i + 1, (PROCS[i].state ? "Running" : "Stopped"));
+        for (int j = 0; j < STD_BUF && PROCS[i].pname[j]; j++)
+        {
             printf("%s ", PROCS[i].pname[j]);
         }
         printf("[%d]\n", PROCS[i].pid);
@@ -324,11 +372,11 @@ func_jobs()
     return 0;
 }
 
-int
-func_kjob()
+int func_kjob()
 {
-    if (last_command_end != 2) return -69;
-    char* tmp, * tmp2;
+    if (last_command_end != 2)
+        return -69;
+    char *tmp, *tmp2;
     int job_number = strtol(last_command[1], &tmp, 10);
     int signal_number = strtol(last_command[2], &tmp2, 10);
     job_number--;
@@ -336,53 +384,59 @@ func_kjob()
     return 0;
 }
 
-int
-func_overkill()
+int func_overkill()
 {
-    for (int i = 0; i < STD_BUF; i++) {
-        if (PROCS[i].pid != -1) {
+    for (int i = 0; i < STD_BUF; i++)
+    {
+        if (PROCS[i].pid != -1)
+        {
             kill(PROCS[i].pid, SIGKILL);
         }
     }
     return 0;
 }
 
-int
-func_cronjob()
+int func_cronjob()
 {
-    if (last_command_end != 6) return -69;
-    char* tmp;
+    if (last_command_end != 6)
+        return -69;
+    char *tmp;
     int interval = strtol(last_command[4], &tmp, 10);
     int till = strtol(last_command[6], &tmp, 10);
-    int reps = till/interval;
+    int reps = till / interval;
 
-    char* TEMP[STD_BUF];
-    for (int i = 0; i < STD_BUF; i++) {
+    char *TEMP[STD_BUF];
+    for (int i = 0; i < STD_BUF; i++)
+    {
         TEMP[i] = NULL;
     }
     int cnt = 0;
-    for (int i = 2; i <= last_command_end-4; i++) {
-        TEMP[i-2] = (char *)malloc(STD_BUF);
-        strcpy(TEMP[i-2], last_command[i]);
+    for (int i = 2; i <= last_command_end - 4; i++)
+    {
+        TEMP[i - 2] = (char *)malloc(STD_BUF);
+        strcpy(TEMP[i - 2], last_command[i]);
         cnt++;
     }
     last_command_end = --cnt;
 
-    for (int i = 0; i < STD_BUF; i++) {
-        if(TEMP[i]) strcpy(last_command[i], TEMP[i]);
-        else last_command[i] = NULL;
+    for (int i = 0; i < STD_BUF; i++)
+    {
+        if (TEMP[i])
+            strcpy(last_command[i], TEMP[i]);
+        else
+            last_command[i] = NULL;
     }
 
     int pid = fork();
-    while (pid == 0 && reps--) {
+    while (pid == 0 && reps--)
+    {
         sleep(interval);
         exec_command(last_command[last_command_end]);
     }
     return 0;
 }
 
-int
-func_quit()
+int func_quit()
 {
     func_overkill();
     exit(0);
