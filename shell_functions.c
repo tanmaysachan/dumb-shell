@@ -385,5 +385,6 @@ int
 func_quit()
 {
     func_overkill();
+    printf("The shell is exiting, thank you!\n");
     exit(0);
 }
